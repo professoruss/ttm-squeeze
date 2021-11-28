@@ -1,7 +1,13 @@
 import os, pandas
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.express as px
 
 dataframes = {}
+
+# overwrite output file
+file1 = open("output/index.html", "a")
+file1.close()
 
 for filename in os.listdir('datasets'):
     #print(filename)
@@ -30,23 +36,26 @@ for filename in os.listdir('datasets'):
     if df.iloc[-3]['squeeze_on'] and not df.iloc[-1]['squeeze_on']:
         print("{} is coming out the squeeze".format(symbol))
 
-    # save all dataframes to a dictionary
-    # we can chart individual names below by calling the chart() function
-    dataframes[symbol] = df
+        dataframes[symbol] = df
 
 
-def chart(df):
-    candlestick = go.Candlestick(x=df['Date'], open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'])
-    upper_band = go.Scatter(x=df['Date'], y=df['upper_band'], name='Upper Bollinger Band', line={'color': 'red'})
-    lower_band = go.Scatter(x=df['Date'], y=df['lower_band'], name='Lower Bollinger Band', line={'color': 'red'})
+        def chart(df):
 
-    upper_keltner = go.Scatter(x=df['Date'], y=df['upper_keltner'], name='Upper Keltner Channel', line={'color': 'blue'})
-    lower_keltner = go.Scatter(x=df['Date'], y=df['lower_keltner'], name='Lower Keltner Channel', line={'color': 'blue'})
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            fig.add_trace(go.Candlestick(x=df['Date'], open=df['Open'], high=df['High'], low=df['Low'], close=df['Close']), secondary_y=True)
+            fig.add_trace(go.Scatter(x=df['Date'], y=df['upper_band'], name='Upper Bollinger Band', line={'color': 'red'}), secondary_y=True)
+            fig.add_trace(go.Scatter(x=df['Date'], y=df['lower_band'], name='Lower Bollinger Band', line={'color': 'red'}), secondary_y=True)
+            fig.add_trace(go.Scatter(x=df['Date'], y=df['upper_keltner'], name='Upper Keltner Channel', line={'color': 'blue'}), secondary_y=True)
+            fig.add_trace(go.Scatter(x=df['Date'], y=df['lower_keltner'], name='Lower Keltner Channel', line={'color': 'blue'}), secondary_y=True)
+            fig.add_trace(go.Bar(x=df['Date'], y=df['Volume'], showlegend=False), secondary_y=False)
+            fig.layout.xaxis.type = 'category'
+            fig.layout.xaxis.rangeslider.visible = False
+            fig.layout.title = symbol
+            #fig.show()
+            fig.write_html("output/" + symbol + ".html")
+            file1 = open("output/index.html", "a")
+            file1.write('<iframe id="igraph" scrolling="no" style="border:none;" seamless="seamless" src="' + symbol + '.html" height="525" width="100%"></iframe>\n')
+            file1.close()
 
-    fig = go.Figure(data=[candlestick, upper_band, lower_band, upper_keltner, lower_keltner])
-    fig.layout.xaxis.type = 'category'
-    fig.layout.xaxis.rangeslider.visible = False
-    fig.show()
-
-df = dataframes['GOOGL']
-chart(df)
+        df = dataframes[symbol]
+        chart(df)
